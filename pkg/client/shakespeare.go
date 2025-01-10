@@ -2,18 +2,27 @@ package client
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"net/http"
-	"time"
+	"os"
 
 	"github.com/MenD32/Shakespeare/pkg/trace"
 )
 
-func ShakespeareRequestFactory(shakespeareFilePath string, host string, respFactory func(*http.Response, time.Time) (Response, error)) ([]Request, error) {
+func ShakespeareRequestFactory(shakespeareFilePath string, host string) ([]Request, error) {
 
-	traceLog, err := trace.Load(shakespeareFilePath)
+	traceLog := trace.TraceLog{}
+
+	shakespeareFile, err := os.Open(shakespeareFilePath)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error opening trace log: %v", err)
+	}
+	defer shakespeareFile.Close()
+
+	err = json.NewDecoder(shakespeareFile).Decode(&traceLog)
+	if err != nil {
+		return nil, fmt.Errorf("error decoding trace log: %v", err)
 	}
 
 	requests := make([]Request, 0)
@@ -34,7 +43,6 @@ func ShakespeareRequestFactory(shakespeareFilePath string, host string, respFact
 		req := NewRequest(
 			trace.Delay,
 			*httpreq,
-			respFactory,
 		)
 
 		requests = append(requests, req)
