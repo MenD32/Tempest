@@ -1,12 +1,10 @@
-package responses
+package response
 
 import (
 	"bufio"
 	"encoding/json"
 	"net/http"
 	"time"
-
-	"github.com/MenD32/Tempest/pkg/client"
 )
 
 const (
@@ -48,7 +46,7 @@ type Delta struct {
 	Role    string `json:"role"`
 }
 
-func (m OpenAIResponse) Metrics() client.Metrics {
+func (m OpenAIResponse) Metrics() Metrics {
 
 	usage := m.GetUsage()
 
@@ -62,7 +60,7 @@ func (m OpenAIResponse) Metrics() client.Metrics {
 		"e2e_ms":        e2e.Abs().Milliseconds(),
 	}
 
-	return client.Metrics{
+	return Metrics{
 		Sent:    m.Sent,
 		Metrics: metrics,
 	}
@@ -81,7 +79,7 @@ func NewToken(chunk []byte) (*Token, error) {
 	return &NewToken, nil
 }
 
-func OpenAIResponseFactory(resp *http.Response, sent time.Time) (client.Response, error) {
+func OpenAIResponseFactory(resp *http.Response, sent time.Time) (Response, error) {
 	var tokens = []Token{}
 	var tokenTimestamp time.Time
 

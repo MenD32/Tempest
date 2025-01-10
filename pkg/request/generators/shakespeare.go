@@ -1,4 +1,4 @@
-package client
+package generators
 
 import (
 	"bytes"
@@ -8,9 +8,10 @@ import (
 	"os"
 
 	"github.com/MenD32/Shakespeare/pkg/trace"
+	"github.com/MenD32/Tempest/pkg/request"
 )
 
-func ShakespeareRequestFactory(shakespeareFilePath string, host string) ([]Request, error) {
+func ShakespeareRequestFactory(shakespeareFilePath string, host string) ([]request.Request, error) {
 
 	traceLog := trace.TraceLog{}
 
@@ -25,7 +26,7 @@ func ShakespeareRequestFactory(shakespeareFilePath string, host string) ([]Reque
 		return nil, fmt.Errorf("error decoding trace log: %v", err)
 	}
 
-	requests := make([]Request, 0)
+	requests := make([]request.Request, 0)
 	for _, trace := range traceLog {
 		httpreq, err := http.NewRequest(
 			trace.Method,
@@ -40,7 +41,7 @@ func ShakespeareRequestFactory(shakespeareFilePath string, host string) ([]Reque
 			httpreq.Header.Add(k, v)
 		}
 
-		req := NewRequest(
+		req := request.NewRequest(
 			trace.Delay,
 			*httpreq,
 		)
@@ -53,4 +54,8 @@ func ShakespeareRequestFactory(shakespeareFilePath string, host string) ([]Reque
 
 func getUrlString(t trace.TraceLogRequest, host string) string {
 	return fmt.Sprintf("%s%s", host, t.Path)
+}
+
+type ShakespeareConfig struct {
+	Host string `json:"host"`
 }

@@ -1,26 +1,28 @@
-package client
+package dump
 
 import (
 	"encoding/json"
 	"os"
+
+	"github.com/MenD32/Tempest/pkg/response"
 )
 
 type Dumper interface {
-	Dump([]Response)
+	Dump([]response.Response)
 }
 
 type FileDumper struct {
 	FilePath string
 }
 
-func (fd *FileDumper) Dump(responses []Response) error {
+func (fd *FileDumper) Dump(responses []response.Response) error {
 	f, err := os.Create(fd.FilePath)
 	if err != nil {
 		return err
 	}
 	defer f.Close()
 
-	metrics := []Metrics{}
+	metrics := []response.Metrics{}
 	for _, res := range responses {
 		metrics = append(metrics, res.Metrics())
 	}

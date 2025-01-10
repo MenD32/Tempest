@@ -7,7 +7,9 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/MenD32/Tempest/pkg/client"
-	"github.com/MenD32/Tempest/pkg/responses"
+	"github.com/MenD32/Tempest/pkg/dump"
+	"github.com/MenD32/Tempest/pkg/request/generators"
+	"github.com/MenD32/Tempest/pkg/response"
 )
 
 var (
@@ -21,7 +23,7 @@ var rootCmd = &cobra.Command{
 	Long:  `Tempest is a benchmarking tool for HTTP Servers, with a specialization in AI/ML model serving.`,
 	Run: func(cmd *cobra.Command, args []string) {
 
-		requests, err := client.ShakespeareRequestFactory(
+		requests, err := generators.ShakespeareRequestFactory(
 			inputFilePath,
 			host,
 		)
@@ -30,13 +32,13 @@ var rootCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		baseclient := client.NewClient(
-			responses.OpenAIResponseFactory,
+		baseclient := client.NewDefaultClient(
+			response.OpenAIResponseFactory,
 		)
 
 		responses := client.Run(baseclient, requests)
 
-		dumper := client.FileDumper{
+		dumper := dump.FileDumper{
 			FilePath: outputFilePath,
 		}
 

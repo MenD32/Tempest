@@ -5,22 +5,21 @@ import (
 	"net/http"
 	"sync"
 	"time"
+
+	"github.com/MenD32/Tempest/pkg/request"
+	"github.com/MenD32/Tempest/pkg/response"
 )
 
-var start time.Time
-
 type Client interface {
-	Send(Request, chan<- Response, *sync.WaitGroup)
+	Send(request.Request, chan<- response.Response, *sync.WaitGroup)
 }
 
-func Run(c Client, requests []Request) []Response {
+func Run(c Client, requests []request.Request) []response.Response {
 	var traceWaitGroup sync.WaitGroup
 	var requestWaitGroup sync.WaitGroup
-	var requestChan = make(chan Request, len(requests))
-	var responseChan = make(chan Response, len(requests))
-
-	start = time.Now()
-
+	var requestChan = make(chan request.Request, len(requests))
+	var responseChan = make(chan response.Response, len(requests))
+	
 	for _, req := range requests {
 		traceWaitGroup.Add(1)
 		go func() {
@@ -43,7 +42,7 @@ func Run(c Client, requests []Request) []Response {
 	requestWaitGroup.Wait()
 	close(responseChan)
 
-	var responses []Response
+	var responses []response.Response
 	for res := range responseChan {
 		responses = append(responses, res)
 	}
@@ -51,14 +50,13 @@ func Run(c Client, requests []Request) []Response {
 }
 
 type client struct {
-	respFactory func(*http.Response, time.Time) (Response, error)
+	respFactory func(*http.Response, time.Time) (response.Response, error)
 }
 
-func (client *client) Send(req Request, resChan chan<- Response, wg *sync.WaitGroup) {
+func (client *client) Send(req request.Request, resChan chan<- response.Response, wg *sync.WaitGroup) {
 	defer wg.Done()
 
 	sent := time.Now()
-	fmt.Printf("Sent request at %v\n", time.Since(start))
 	httpresp, err := http.DefaultClient.Do(req.HTTPRequest())
 	if err != nil {
 		fmt.Printf("Error sending request: %v\n", err)
@@ -74,6 +72,6 @@ func (client *client) Send(req Request, resChan chan<- Response, wg *sync.WaitGr
 	resChan <- resp
 }
 
-func NewClient(respFactory func(*http.Response, time.Time) (Response, error)) Client {
+func NewDefaultClient(respFactory func(*http.Response, time.Time) (response.Response, error)) Client {
 	return &client{respFactory: respFactory}
 }
