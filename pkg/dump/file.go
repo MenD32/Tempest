@@ -24,7 +24,11 @@ func (fd FileDumper) Dump(responses []response.Response) error {
 
 	metrics := []response.Metrics{}
 	for _, res := range responses {
-		metrics = append(metrics, res.Metrics())
+		metric, err := res.Metrics()
+		if err != nil {
+			return fmt.Errorf("failed to get metrics: %w", err)
+		}
+		metrics = append(metrics, *metric)
 	}
 
 	data, err := fd.DumpFormatterFactory(metrics)
@@ -49,6 +53,7 @@ func DumpJSON(metrics []response.Metrics) ([]byte, error) {
 func MetricsToCSV(metrics []response.Metrics) [][]string {
 	columns := []string{
 		"sent",
+		"body",
 	}
 	for key := range metrics[0].Metrics {
 		columns = append(columns, key)
@@ -58,6 +63,7 @@ func MetricsToCSV(metrics []response.Metrics) [][]string {
 	for _, metric := range metrics {
 		row := []string{
 			metric.Sent.String(),
+			string(metric.Body),
 		}
 		for _, value := range metric.Metrics {
 			row = append(row, fmt.Sprintf("%v", value))

@@ -1,10 +1,10 @@
 package main
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/spf13/cobra"
+	"k8s.io/klog"
 
 	dumpconfig "github.com/MenD32/Tempest/pkg/dump/config"
 	requestconfig "github.com/MenD32/Tempest/pkg/request/config"
@@ -36,13 +36,17 @@ var rootCmd = &cobra.Command{
 		}
 
 		CompletedConfig := Config.Complete()
-		runner.NewRunner(*CompletedConfig).Run()
+		err := runner.NewRunner(*CompletedConfig).Run()
+		if err != nil {
+			klog.Errorf("%s\n", err)
+			os.Exit(1)
+		}
 	},
 }
 
 func main() {
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Println(err)
+		klog.Errorf("%s\n", err)
 		os.Exit(1)
 	}
 }

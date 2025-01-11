@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/MenD32/Tempest/pkg/response"
+	"k8s.io/klog/v2"
 )
 
 const (
@@ -15,8 +16,8 @@ const (
 )
 
 type OpenAIResponse struct {
-	Sent   time.Time
-	Tokens []Token
+	Sent   time.Time `json:"sent"`
+	Tokens []Token   `json:"tokens"`
 }
 
 type Token struct {
@@ -48,12 +49,17 @@ type Delta struct {
 	Role    string `json:"role"`
 }
 
-func (m OpenAIResponse) Metrics() response.Metrics {
+func (m OpenAIResponse) Metrics() (*response.Metrics, error) {
+
+	body, err := m.Body()
+	if err != nil {
+		return nil, err
+	}
 
 	usage := m.GetUsage()
 
 	ttft := m.Tokens[0].Timestamp.Sub(m.Sent)
-	e2e := m.Tokens[len(m.Tokens)-2].Timestamp.Sub(m.Sent)
+	e2e := m.Tokens[len(m.Tokens)-1].Timestamp.Sub(m.Sent)
 
 	metrics := map[string]interface{}{
 		"input_tokens":  usage.PromptTokens,
@@ -62,10 +68,11 @@ func (m OpenAIResponse) Metrics() response.Metrics {
 		"e2e_ms":        e2e.Abs().Milliseconds(),
 	}
 
-	return response.Metrics{
+	return &response.Metrics{
 		Sent:    m.Sent,
+		Body:    body,
 		Metrics: metrics,
-	}
+	}, nil
 }
 
 func (m OpenAIResponse) GetUsage() Usage {
@@ -88,6 +95,7 @@ func OpenAIResponseBuilder(resp *http.Response, sent time.Time) (response.Respon
 	scanner := bufio.NewScanner(resp.Body)
 	for scanner.Scan() {
 		raw := scanner.Text()
+		klog.V(1).Infof("got raw: '%s'\n", raw)
 		tokenTimestamp = time.Now()
 		if len(raw) == 0 || raw == END_TOKEN {
 			continue
@@ -108,4 +116,25 @@ func OpenAIResponseBuilder(resp *http.Response, sent time.Time) (response.Respon
 
 func GetMilliseconds(d time.Duration) float64 {
 	return float64(d) / float64(time.Millisecond)
+}
+
+func (m OpenAIResponse) Body() ([]byte, error) {
+	body, err := json.Marshal(m)
+	if err != nil {
+		return nil, err
+	}
+	return body, nil
+}
+
+func (m OpenAIResponse) Verify() error {
+	if len(m.Tokens) == 0 {
+		return ErrNoTokens
+	}
+	for _, token := range m.Tokens {
+		if len(token.Choices) == 0 && token.Usage == (Usage{}) {
+			klog.Errorf("%+v\n", token)
+			return ErrInvalidToken
+		}
+	}
+	return nil
 }

@@ -1,13 +1,13 @@
 package client
 
 import (
-	"fmt"
 	"net/http"
 	"sync"
 	"time"
 
 	"github.com/MenD32/Tempest/pkg/request"
 	"github.com/MenD32/Tempest/pkg/response"
+	"k8s.io/klog/v2"
 )
 
 type Client interface {
@@ -19,7 +19,7 @@ func Run(c Client, requests []request.Request) []response.Response {
 	var requestWaitGroup sync.WaitGroup
 	var requestChan = make(chan request.Request, len(requests))
 	var responseChan = make(chan response.Response, len(requests))
-	
+
 	for _, req := range requests {
 		traceWaitGroup.Add(1)
 		go func() {
@@ -59,13 +59,13 @@ func (client *client) Send(req request.Request, resChan chan<- response.Response
 	sent := time.Now()
 	httpresp, err := http.DefaultClient.Do(req.HTTPRequest())
 	if err != nil {
-		fmt.Printf("Error sending request: %v\n", err)
+		klog.Errorf("Error sending request: %v\n", err)
 		return
 	}
 
 	resp, err := client.respFactory(httpresp, sent)
 	if err != nil {
-		fmt.Printf("Error creating response: %v\n", err)
+		klog.Errorf("Error creating response: %v\n", err)
 		return
 	}
 

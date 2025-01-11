@@ -38,6 +38,13 @@ func (r *Runner) Run() error {
 
 	responses := client.Run(baseclient, requests)
 
+	for _, res := range responses {
+		err := res.Verify()
+		if err != nil {
+			return fmt.Errorf("error verifying response: %v", err)
+		}
+	}
+
 	dumper := dump.FileDumper{
 		FilePath:             r.config.OutputFile,
 		DumpFormatterFactory: dump.DumpJSON,
