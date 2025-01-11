@@ -36,6 +36,9 @@ func TestFileDumper_DumpJSON(t *testing.T) {
 	}
 
 	responses := make([]response.Response, 100)
+	for i := range responses {
+		responses[i] = TestResponse{}
+	}
 
 	err := dumper.Dump(responses)
 	assert.NoError(t, err)
@@ -54,6 +57,9 @@ func TestFileDumper_DumpCSV(t *testing.T) {
 	}
 
 	responses := make([]response.Response, 100)
+	for i := range responses {
+		responses[i] = TestResponse{}
+	}
 
 	err := dumper.Dump(responses)
 	assert.NoError(t, err)
