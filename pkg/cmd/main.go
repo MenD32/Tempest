@@ -88,18 +88,18 @@ func main() {
 }
 
 func init() {
-	rootCmd.Flags().StringVarP(&inputFile, "input", "i", "", "Input file for benchmarking")
-	rootCmd.MarkFlagRequired("input")
+	runCmd.Flags().StringVarP(&inputFile, "input", "i", "", "Input file for benchmarking")
+	runCmd.MarkFlagRequired("input")
 
-	rootCmd.Flags().StringVarP(&outputFile, "output", "o", "", "Input file for benchmarking")
-	rootCmd.MarkFlagRequired("output")
+	runCmd.Flags().StringVarP(&outputFile, "output", "o", "", "Input file for benchmarking")
+	runCmd.MarkFlagRequired("output")
 
-	rootCmd.Flags().StringVar(&host, "host", "h", "Input file for benchmarking")
-	rootCmd.MarkFlagRequired("host")
+	runCmd.Flags().StringVar(&host, "host", "h", "Input file for benchmarking")
+	runCmd.MarkFlagRequired("host")
 
-	rootCmd.Flags().StringVar(&requestType, "request-type", "shakespeare", "Request type (shakespeare)")
-	rootCmd.Flags().StringVar(&responseType, "response-type", "openai", "Response format")
-	rootCmd.Flags().StringVar(&outputFormat, "output-format", "json", "Output format (json or csv)")
+	runCmd.Flags().StringVar(&requestType, "request-type", "Shakespeare", "Request type (shakespeare)")
+	runCmd.Flags().StringVar(&responseType, "response-type", "openai", "Response format")
+	runCmd.Flags().StringVar(&outputFormat, "output-format", "JSON", "Output format (json or csv)")
 
 	rootCmd.AddCommand(runCmd)
 	rootCmd.AddCommand(versionCmd)

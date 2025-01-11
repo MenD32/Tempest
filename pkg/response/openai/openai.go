@@ -13,6 +13,8 @@ import (
 const (
 	END_TOKEN    = "data: [DONE]"
 	TOKEN_PREFIX = "data: "
+
+	MIN_TOKEN_COUNT = 2 // 1 for at least 1 token, 1 for usage
 )
 
 type OpenAIResponse struct {
@@ -57,15 +59,21 @@ func (m OpenAIResponse) Metrics() (*response.Metrics, error) {
 	}
 
 	usage := m.GetUsage()
+	tokens := m.GetTokens()
 
-	ttft := m.Tokens[0].Timestamp.Sub(m.Sent)
-	e2e := m.Tokens[len(m.Tokens)-1].Timestamp.Sub(m.Sent)
+	ttft := tokens[0].Timestamp.Sub(m.Sent)
+	e2e := tokens[len(tokens)-1].Timestamp.Sub(m.Sent)
+	itl := time.Duration(0)
+	if len(tokens) > 1 {
+		itl = (e2e - ttft) / time.Duration(len(tokens)-1)
+	}
 
 	metrics := map[string]interface{}{
 		"input_tokens":  usage.PromptTokens,
 		"output_tokens": usage.CompletionTokens,
 		"ttft_ms":       ttft.Abs().Milliseconds(),
 		"e2e_ms":        e2e.Abs().Milliseconds(),
+		"itl_ms":        itl.Abs().Milliseconds(),
 	}
 
 	return &response.Metrics{
@@ -77,6 +85,10 @@ func (m OpenAIResponse) Metrics() (*response.Metrics, error) {
 
 func (m OpenAIResponse) GetUsage() Usage {
 	return m.Tokens[len(m.Tokens)-1].Usage
+}
+
+func (m OpenAIResponse) GetTokens() []Token {
+	return m.Tokens[1 : len(m.Tokens)-1] // start token is empty, remove usage token
 }
 
 func NewToken(chunk []byte) (*Token, error) {
@@ -95,7 +107,7 @@ func OpenAIResponseBuilder(resp *http.Response, sent time.Time) (response.Respon
 	scanner := bufio.NewScanner(resp.Body)
 	for scanner.Scan() {
 		raw := scanner.Text()
-		klog.V(1).Infof("got raw: '%s'\n", raw)
+		klog.V(9).Infof("got raw: '%s'\n", raw)
 		tokenTimestamp = time.Now()
 		if len(raw) == 0 || raw == END_TOKEN {
 			continue
@@ -127,7 +139,7 @@ func (m OpenAIResponse) Body() ([]byte, error) {
 }
 
 func (m OpenAIResponse) Verify() error {
-	if len(m.Tokens) == 0 {
+	if len(m.Tokens) < MIN_TOKEN_COUNT {
 		return ErrNoTokens
 	}
 	for _, token := range m.Tokens {
