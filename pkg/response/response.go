@@ -7,7 +7,6 @@ import (
 
 type Response interface {
 	Metrics() (*Metrics, error)
-	Body() ([]byte, error)
 	Verify() error
 }
 

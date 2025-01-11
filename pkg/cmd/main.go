@@ -50,10 +50,14 @@ func RunCmd(cmd *cobra.Command, args []string) {
 		OutputType:   dumpconfig.OutputType(outputFormat),
 	}
 
-	CompletedConfig := Config.Complete()
-	err := runner.NewRunner(*CompletedConfig).Run()
+	CompletedConfig, err := Config.Complete()
 	if err != nil {
-		klog.Errorf("%s\n", err)
+		klog.Errorf("Error completing config: %s\n", err)
+		os.Exit(1)
+	}
+	err = runner.NewRunner(*CompletedConfig).Run()
+	if err != nil {
+		klog.Errorf("Runtime error: %s\n", err)
 		os.Exit(1)
 	}
 }
