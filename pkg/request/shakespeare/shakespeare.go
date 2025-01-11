@@ -1,4 +1,4 @@
-package generators
+package shakespeare
 
 import (
 	"bytes"
@@ -9,6 +9,10 @@ import (
 
 	"github.com/MenD32/Shakespeare/pkg/trace"
 	"github.com/MenD32/Tempest/pkg/request"
+)
+
+const (
+	ShakespeareConfigName = "Shakespeare"
 )
 
 func ShakespeareRequestFactory(shakespeareFilePath string, host string) ([]request.Request, error) {
@@ -56,6 +60,12 @@ func getUrlString(t trace.TraceLogRequest, host string) string {
 	return fmt.Sprintf("%s%s", host, t.Path)
 }
 
-type ShakespeareConfig struct {
-	Host string `json:"host"`
+type ShakespeareConfig struct{}
+
+func (c ShakespeareConfig) GetName() string {
+	return ShakespeareConfigName
+}
+
+func (c ShakespeareConfig) GetRequestFactory() func(string, string) ([]request.Request, error) {
+	return ShakespeareRequestFactory
 }

@@ -13,7 +13,7 @@ type Request interface {
 type request struct {
 	http.Request
 
-	delay       time.Duration
+	delay time.Duration
 }
 
 func (r *request) Delay() time.Duration {
@@ -26,7 +26,9 @@ func (r *request) HTTPRequest() *http.Request {
 
 func NewRequest(delay time.Duration, req http.Request) Request {
 	return &request{
-		delay:       delay,
-		Request:     req,
+		delay:   delay,
+		Request: req,
 	}
 }
+
+type RequestFactory func(string, string) ([]Request, error)

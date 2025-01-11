@@ -1,6 +1,8 @@
 package response
 
-import "time"
+import (
+	"time"
+)
 
 type Metrics struct {
 	Sent    time.Time              `json:"sent"`
