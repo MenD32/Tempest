@@ -66,7 +66,6 @@ data: [DONE]
 			wantTokens: 3,
 			wantErr:    false,
 		},
-		
 	}
 
 	for _, tt := range tests {
@@ -84,6 +83,74 @@ data: [DONE]
 				openAIResp, ok := got.(openai.OpenAIResponse)
 				assert.True(t, ok)
 				assert.Equal(t, tt.wantTokens, len(openAIResp.Tokens))
+			}
+		})
+	}
+}
+
+func TestOpenAIResponse_Verify(t *testing.T) {
+	tests := []struct {
+		name    string
+		tokens  []openai.Token
+		wantErr bool
+	}{
+		{
+			name: "valid tokens",
+			tokens: []openai.Token{
+				{
+					ID: "token1",
+					Choices: []openai.Choice{
+						{Delta: openai.Delta{Content: "Hello"}},
+					},
+				},
+				{
+					ID: "token2",
+					Usage: openai.Usage{
+						CompletionTokens: 1,
+						PromptTokens:     1,
+						TotalTokens:      2,
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "no tokens",
+			tokens: []openai.Token{
+				{
+					ID: "token1",
+					Choices: []openai.Choice{
+						{Delta: openai.Delta{Content: "Hello"}},
+					},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "invalid token",
+			tokens: []openai.Token{
+				{
+					ID: "token1",
+					Choices: []openai.Choice{
+						{Delta: openai.Delta{Content: "Hello"}},
+					},
+				},
+				{
+					ID: "token2",
+				},
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			resp := openai.OpenAIResponse{
+				Tokens: tt.tokens,
+			}
+			err := resp.Verify()
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Verify() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
