@@ -57,6 +57,10 @@ func ShakespeareRequestFactory(shakespeareFilePath string, host string) ([]reque
 }
 
 func getUrlString(t trace.TraceLogRequest, host string) string {
+	// this should work with host='http://localhost:8080' and host='http://localhost:8080/'
+	if t.Path[0] != '/' {
+		return fmt.Sprintf("%s/%s", host, t.Path)
+	}
 	return fmt.Sprintf("%s%s", host, t.Path)
 }
 
