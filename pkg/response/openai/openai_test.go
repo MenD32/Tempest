@@ -92,7 +92,7 @@ func TestOpenAIResponse_Verify(t *testing.T) {
 	tests := []struct {
 		name    string
 		tokens  []openai.Token
-		wantErr bool
+		wantErr error
 	}{
 		{
 			name: "valid tokens",
@@ -112,7 +112,7 @@ func TestOpenAIResponse_Verify(t *testing.T) {
 					},
 				},
 			},
-			wantErr: false,
+			wantErr: nil,
 		},
 		{
 			name: "no tokens",
@@ -124,7 +124,7 @@ func TestOpenAIResponse_Verify(t *testing.T) {
 					},
 				},
 			},
-			wantErr: true,
+			wantErr: openai.ErrNoTokens,
 		},
 		{
 			name: "invalid token",
@@ -139,7 +139,7 @@ func TestOpenAIResponse_Verify(t *testing.T) {
 					ID: "token2",
 				},
 			},
-			wantErr: true,
+			wantErr: openai.ErrInvalidToken,
 		},
 	}
 
@@ -149,8 +149,9 @@ func TestOpenAIResponse_Verify(t *testing.T) {
 				Tokens: tt.tokens,
 			}
 			err := resp.Verify()
-			if (err != nil) != tt.wantErr {
+			if err != tt.wantErr {
 				t.Errorf("Verify() error = %v, wantErr %v", err, tt.wantErr)
+
 			}
 		})
 	}
