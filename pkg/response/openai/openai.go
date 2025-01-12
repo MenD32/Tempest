@@ -71,9 +71,9 @@ func (m OpenAIResponse) Metrics() (*response.Metrics, error) {
 	metrics := map[string]interface{}{
 		"input_tokens":  usage.PromptTokens,
 		"output_tokens": usage.CompletionTokens,
-		"ttft_ms":       ttft.Abs().Milliseconds(),
-		"e2e_ms":        e2e.Abs().Milliseconds(),
-		"itl_ms":        itl.Abs().Milliseconds(),
+		"ttft_ms":       getDurationMilliseconds(ttft.Abs()),
+		"e2e_ms":        getDurationMilliseconds(e2e.Abs()),
+		"itl_ms":        getDurationMilliseconds(itl.Abs()),
 	}
 
 	return &response.Metrics{
@@ -131,7 +131,7 @@ func GetMilliseconds(d time.Duration) float64 {
 }
 
 func (m OpenAIResponse) Body() ([]byte, error) {
-	body, err := json.Marshal(m)
+	body, err := json.Marshal(m.Tokens)
 	if err != nil {
 		return nil, err
 	}
@@ -149,4 +149,8 @@ func (m OpenAIResponse) Verify() error {
 		}
 	}
 	return nil
+}
+
+func getDurationMilliseconds(d time.Duration) float64 {
+	return float64(d) / float64(time.Millisecond)
 }

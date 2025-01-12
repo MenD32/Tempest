@@ -14,6 +14,10 @@ build: $(GO_FILES)
 	@echo "Building $(APP_NAME)..."
 	go build -ldflags "$(LDFLAGS)" -o dist/$(APP_NAME) pkg/cmd/main.go
 
+test:
+	@echo "Running tests..."
+	go test -v ./...
+
 clean:
 	@echo "Cleaning up..."
 	rm -f $(APP_NAME)
