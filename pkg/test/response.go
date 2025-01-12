@@ -6,7 +6,9 @@ import (
 	"github.com/MenD32/Tempest/pkg/response"
 )
 
-type TestResponse struct{}
+type TestResponse struct {
+	Sent time.Time
+}
 
 func (tr TestResponse) Metrics() (*response.Metrics, error) {
 	return &response.Metrics{
