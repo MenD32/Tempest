@@ -88,7 +88,7 @@ func (m OpenAIResponse) GetUsage() Usage {
 }
 
 func (m OpenAIResponse) GetTokens() []Token {
-	return m.Tokens[1 : len(m.Tokens)-1] // start token is empty, remove usage token
+	return m.Tokens[1 : len(m.Tokens)-1] // start token is empty, usage token is unecessary
 }
 
 func NewToken(chunk []byte) (*Token, error) {
