@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"sync"
 	"testing"
 	"time"
 
@@ -57,7 +58,6 @@ func TestRunWithServer(t *testing.T) {
 }
 
 func TestRunWithServerAndHighConcurrentRequests(t *testing.T) {
-	// Start a test server
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		time.Sleep(1 * time.Second)
 		fmt.Fprintf(w, "Hello, world")
@@ -88,5 +88,62 @@ func TestRunWithServerAndHighConcurrentRequests(t *testing.T) {
 		if drift > MAX_DRIFT {
 			t.Fatalf("Expected drift to be less than %v, got %v", MAX_DRIFT, drift)
 		}
+	}
+}
+
+func TestClientSend(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "Hello, world")
+	}))
+	defer ts.Close()
+
+	respFactory := func(resp *http.Response, sent time.Time) (response.Response, error) {
+		return test.TestResponse{Sent: sent}, nil
+	}
+
+	c := client.NewDefaultClient(respFactory)
+
+	req := test.NewTestRequest(ts.URL, 0)
+	resChan := make(chan response.Response, 1)
+	var wg sync.WaitGroup
+
+	wg.Add(1)
+	go c.Send(req, resChan, &wg)
+	wg.Wait()
+	close(resChan)
+
+	res, ok := <-resChan
+	if !ok {
+		t.Fatalf("Expected a response, but got none")
+	}
+
+	testResp, ok := res.(test.TestResponse)
+	if !ok {
+		t.Fatalf("Expected TestResponse, but got %T", res)
+	}
+
+	if testResp.Sent.IsZero() {
+		t.Fatalf("Expected non-zero Sent time")
+	}
+}
+
+func TestClientSendError(t *testing.T) {
+	respFactory := func(resp *http.Response, sent time.Time) (response.Response, error) {
+		return test.TestResponse{}, nil
+	}
+
+	c := client.NewDefaultClient(respFactory)
+
+	req := test.NewTestRequest("http://invalid-url", 0)
+	resChan := make(chan response.Response, 1)
+	var wg sync.WaitGroup
+
+	wg.Add(1)
+	go c.Send(req, resChan, &wg)
+	wg.Wait()
+	close(resChan)
+
+	if len(resChan) != 0 {
+		t.Fatalf("Expected no response, but got one")
 	}
 }
