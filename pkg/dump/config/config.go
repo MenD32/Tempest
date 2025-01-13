@@ -26,7 +26,7 @@ func DumperFactory(outputType OutputType, filepath string) dump.Dumper {
 	case CSVOutputType:
 		return dump.FileDumper{
 			FilePath:             filepath,
-			DumpFormatterFactory: dump.DumpJSON,
+			DumpFormatterFactory: dump.DumpCSV,
 		}
 	}
 	return nil

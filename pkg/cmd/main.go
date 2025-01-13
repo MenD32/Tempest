@@ -91,10 +91,10 @@ func init() {
 	runCmd.Flags().StringVarP(&inputFile, "input", "i", "", "Input file for benchmarking")
 	runCmd.MarkFlagRequired("input")
 
-	runCmd.Flags().StringVarP(&outputFile, "output", "o", "", "Input file for benchmarking")
+	runCmd.Flags().StringVarP(&outputFile, "output", "o", "", "Output file for benchmark results")
 	runCmd.MarkFlagRequired("output")
 
-	runCmd.Flags().StringVar(&host, "host", "h", "Input file for benchmarking")
+	runCmd.Flags().StringVar(&host, "host", "", "Host to send requests to")
 	runCmd.MarkFlagRequired("host")
 
 	runCmd.Flags().StringVar(&requestType, "request-type", "Shakespeare", "Request type (shakespeare)")
