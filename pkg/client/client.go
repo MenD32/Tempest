@@ -20,11 +20,22 @@ func Run(c Client, requests []request.Request) []response.Response {
 	var requestChan = make(chan request.Request, len(requests))
 	var responseChan = make(chan response.Response, len(requests))
 
+	requestTimings := make(map[request.Request]time.Time, len(requests))
+
+	klog.Infof("Indexing %d requests", len(requests))
+	expectedStartTime := time.Now().Add(1 * time.Second)
 	for _, req := range requests {
+		requestTimings[req] = expectedStartTime.Add(req.Delay())
+	}
+
+	time.Sleep(time.Until(expectedStartTime))
+	klog.Infof("Starting benchmark")
+
+	for req, calltime := range requestTimings {
 		traceWaitGroup.Add(1)
 		go func() {
 			defer traceWaitGroup.Done()
-			time.Sleep(req.Delay())
+			time.Sleep(time.Until(calltime))
 			requestChan <- req
 		}()
 	}
