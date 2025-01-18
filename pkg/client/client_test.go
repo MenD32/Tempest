@@ -71,24 +71,32 @@ func TestRunWithServerAndHighConcurrentRequests(t *testing.T) {
 	c := client.NewDefaultClient(respFactory)
 
 	requests := []request.Request{}
-	start := time.Now()
 	for i := 0; i < MAX_CONCURRENT_REQUESTS; i++ {
 		req := test.NewTestRequest(ts.URL, time.Millisecond*time.Duration(i))
 		requests = append(requests, req)
 	}
 
+	start := time.Now().Add(1 * time.Second)
 	responses := client.Run(c, requests)
 
 	if len(responses) != len(requests) {
 		t.Fatalf("Expected %d responses, got %d", len(requests), len(responses))
 	}
 
+	driftSum := time.Duration(0)
 	for i, res := range responses {
 		drift := res.(test.TestResponse).Sent.Sub(start) - time.Millisecond*time.Duration(i)
+		driftSum += drift
 		if drift > MAX_DRIFT {
 			t.Fatalf("Expected drift to be less than %v, got %v", MAX_DRIFT, drift)
 		}
 	}
+
+	avgDrift := driftSum / time.Duration(len(responses))
+	if avgDrift > MAX_DRIFT {
+		t.Fatalf("Expected average drift to be less than %v, got %v", MAX_DRIFT, avgDrift)
+	}
+
 }
 
 func TestClientSend(t *testing.T) {

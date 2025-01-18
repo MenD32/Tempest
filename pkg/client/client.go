@@ -50,8 +50,12 @@ func Run(c Client, requests []request.Request) []response.Response {
 	traceWaitGroup.Wait()
 	close(requestChan)
 
+	klog.Info("Finished sending requests, Waiting for responses...")
+
 	requestWaitGroup.Wait()
 	close(responseChan)
+
+	klog.Info("All responses received.")
 
 	var responses []response.Response
 	for res := range responseChan {

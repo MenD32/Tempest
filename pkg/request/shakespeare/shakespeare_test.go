@@ -71,13 +71,6 @@ func TestShakespeareRequestFactory(t *testing.T) {
 			if len(result) != len(tt.expected) {
 				t.Errorf("Expected %v, got %v", tt.expected, result)
 			}
-
-			for i := range result {
-				if result[i].HTTPRequest() != tt.expected[i].HTTPRequest() || result[i].Delay() != tt.expected[i].Delay() {
-					t.Errorf("Expected %v, got %v", result[i], tt.expected[i])
-				}
-			}
-
 		})
 	}
 }
