@@ -10,8 +10,13 @@ import (
 	"k8s.io/klog/v2"
 )
 
+const (
+	COMPUTE_OFFSET = 6 * time.Millisecond
+)
+
 type Client interface {
 	Send(request.Request, chan<- response.Response, *sync.WaitGroup)
+	LogLevel() klog.Level
 }
 
 func Run(c Client, requests []request.Request) []response.Response {
@@ -25,7 +30,7 @@ func Run(c Client, requests []request.Request) []response.Response {
 	klog.Infof("Indexing %d requests", len(requests))
 	expectedStartTime := time.Now().Add(1 * time.Second)
 	for _, req := range requests {
-		requestTimings[req] = expectedStartTime.Add(req.Delay())
+		requestTimings[req] = expectedStartTime.Add(req.Delay()).Add(COMPUTE_OFFSET)
 	}
 
 	time.Sleep(time.Until(expectedStartTime))
@@ -55,7 +60,7 @@ func Run(c Client, requests []request.Request) []response.Response {
 	requestWaitGroup.Wait()
 	close(responseChan)
 
-	klog.Info("All responses received.")
+	klog.V(c.LogLevel()).Info("All responses received.")
 
 	var responses []response.Response
 	for res := range responseChan {
@@ -66,17 +71,18 @@ func Run(c Client, requests []request.Request) []response.Response {
 
 type client struct {
 	respFactory func(*http.Response, time.Time) (response.Response, error)
+	loglevel    int
 }
 
 func (client *client) Send(req request.Request, resChan chan<- response.Response, wg *sync.WaitGroup) {
 	defer wg.Done()
 
 	sent := time.Now()
-	httpresp, err := http.DefaultClient.Do(req.HTTPRequest())
-	if err != nil {
-		klog.Errorf("Error sending request: %v\n", err)
-		return
-	}
+	httpresp, _ := http.DefaultClient.Do(req.HTTPRequest())
+	// if err != nil {
+	// 	klog.Errorf("Error sending request: %v\n", err)
+	// 	return
+	// }
 
 	resp, err := client.respFactory(httpresp, sent)
 	if err != nil {
@@ -87,6 +93,10 @@ func (client *client) Send(req request.Request, resChan chan<- response.Response
 	resChan <- resp
 }
 
-func NewDefaultClient(respFactory func(*http.Response, time.Time) (response.Response, error)) Client {
-	return &client{respFactory: respFactory}
+func (client *client) LogLevel() klog.Level {
+	return klog.Level(client.loglevel)
+}
+
+func NewDefaultClient(respFactory func(*http.Response, time.Time) (response.Response, error), loglevel int) Client {
+	return &client{respFactory: respFactory, loglevel: loglevel}
 }

@@ -20,6 +20,7 @@ type Config struct {
 	InputType    requestconfig.RequestFactoryType   `json:"input_format,omitempty"`
 	ResponseType responseconfig.ResponseBuilderType `json:"request_type,omitempty"`
 	OutputType   dumpconfig.OutputType              `json:"output_format,omitempty"`
+	LogLevel     string                             `json:"log_level,omitempty"`
 }
 
 type CompletedConfig struct {
@@ -30,6 +31,8 @@ type CompletedConfig struct {
 	RequestFactory  request.RequestFactory
 	ResponseBuilder response.ResponseBuilder
 	Dumper          dump.Dumper
+
+	LogLevel int
 }
 
 func (c *Config) Complete() (*CompletedConfig, error) {

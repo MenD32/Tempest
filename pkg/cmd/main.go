@@ -26,6 +26,8 @@ var (
 	Version        = "dev"
 	CommitHash     = "none"
 	BuildTimestamp = "unknown"
+
+	loglevel = "v"
 )
 
 func BuildVersion() string {
@@ -41,6 +43,9 @@ var rootCmd = &cobra.Command{
 }
 
 func RunCmd(cmd *cobra.Command, args []string) {
+
+	klog.Infof("%s\n", responseType)
+
 	Config := runner.Config{
 		Host:         host,
 		InputFile:    inputFile,
@@ -48,6 +53,8 @@ func RunCmd(cmd *cobra.Command, args []string) {
 		InputType:    requestconfig.RequestFactoryType(requestType),
 		ResponseType: responseconfig.ResponseBuilderType(responseType),
 		OutputType:   dumpconfig.OutputType(outputFormat),
+		LogLevel:     loglevel,
+
 	}
 
 	CompletedConfig, err := Config.Complete()
@@ -93,6 +100,8 @@ func init() {
 
 	runCmd.Flags().StringVarP(&outputFile, "output", "o", "", "Output file for benchmark results")
 	runCmd.MarkFlagRequired("output")
+
+	runCmd.Flags().StringVarP(&loglevel, "loglevel", "v", "v", "Log level")
 
 	runCmd.Flags().StringVar(&host, "host", "", "Host to send requests to")
 	runCmd.MarkFlagRequired("host")

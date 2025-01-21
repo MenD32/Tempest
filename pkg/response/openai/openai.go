@@ -101,6 +101,7 @@ func NewToken(chunk []byte) (*Token, error) {
 }
 
 func OpenAIResponseBuilder(resp *http.Response, sent time.Time) (response.Response, error) {
+	klog.Info("Creating OpenAI response")
 	var tokens = []Token{}
 	var tokenTimestamp time.Time
 

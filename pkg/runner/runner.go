@@ -7,7 +7,6 @@ import (
 	"github.com/MenD32/Tempest/pkg/dump"
 	"github.com/MenD32/Tempest/pkg/request"
 	"github.com/MenD32/Tempest/pkg/request/shakespeare"
-	"github.com/MenD32/Tempest/pkg/response/openai"
 )
 
 type Runner struct {
@@ -33,7 +32,8 @@ func (r *Runner) Run() error {
 	}
 
 	baseclient := client.NewDefaultClient(
-		openai.OpenAIResponseBuilder,
+		r.config.ResponseBuilder,
+		r.config.LogLevel,
 	)
 
 	responses := client.Run(baseclient, requests)
