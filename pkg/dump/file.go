@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/MenD32/Tempest/pkg/response"
 )
@@ -13,6 +14,8 @@ import (
 type FileDumper struct {
 	FilePath             string
 	DumpFormatterFactory DumpFormatterFactory
+
+	StartedAt time.Time
 }
 
 func (fd FileDumper) Dump(responses []response.Response) error {
@@ -34,7 +37,9 @@ func (fd FileDumper) Dump(responses []response.Response) error {
 		metrics = append(metrics, *metric)
 	}
 
-	data, err := fd.DumpFormatterFactory(metrics)
+	dd := NewDumpData(metrics, fd.StartedAt)
+
+	data, err := fd.DumpFormatterFactory(dd)
 	if err != nil {
 		return err
 	}
@@ -47,10 +52,27 @@ func (fd FileDumper) Dump(responses []response.Response) error {
 	return nil
 }
 
-type DumpFormatterFactory func([]response.Metrics) ([]byte, error)
+type DumpFormatterFactory func(DumpData) ([]byte, error)
 
-func DumpJSON(metrics []response.Metrics) ([]byte, error) {
-	return json.Marshal(metrics)
+func DumpJSON(dd DumpData) ([]byte, error) {
+	return json.Marshal(
+		struct {
+			Metrics  []response.Metrics `json:"metrics"`
+			Metadata struct {
+				Count     int       `json:"count"`
+				StartTime time.Time `json:"start_time"`
+			} `json:"metadata"`
+		}{
+			Metrics: dd.Metrics,
+			Metadata: struct {
+				Count     int       `json:"count"`
+				StartTime time.Time `json:"start_time"`
+			}{
+				Count:     len(dd.Metrics),
+				StartTime: dd.Metadata.StartTime,
+			},
+		},
+	)
 }
 
 func MetricsToCSV(metrics []response.Metrics) [][]string {
@@ -77,11 +99,11 @@ func MetricsToCSV(metrics []response.Metrics) [][]string {
 	return rows
 }
 
-func DumpCSV(metrics []response.Metrics) ([]byte, error) {
+func DumpCSV(dd DumpData) ([]byte, error) {
 	buf := new(bytes.Buffer)
 	writer := csv.NewWriter(buf)
 
-	rows := MetricsToCSV(metrics)
+	rows := MetricsToCSV(dd.Metrics)
 	if err := writer.WriteAll(rows); err != nil {
 		return nil, err
 	}

@@ -18,10 +18,8 @@ func ResponseBuilderFactory(responseType ResponseBuilderType) response.ResponseB
 	klog.Infof("Response Type: %s\n", responseType)
 	switch responseType {
 	case OpenAIResponseType:
-		klog.Info("Empty Response")
 		return openai.OpenAIResponseBuilder
 	case EmptyResponseType:
-		klog.Info("Empty Response")
 		return empty.EmptyResponseBuilder
 	}
 	return nil

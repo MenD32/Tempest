@@ -7,6 +7,7 @@ import (
 	"github.com/MenD32/Tempest/pkg/dump"
 	"github.com/MenD32/Tempest/pkg/request"
 	"github.com/MenD32/Tempest/pkg/request/shakespeare"
+	"k8s.io/klog/v2"
 )
 
 type Runner struct {
@@ -34,9 +35,14 @@ func (r *Runner) Run() error {
 	baseclient := client.NewDefaultClient(
 		r.config.ResponseBuilder,
 		r.config.LogLevel,
+		true,
 	)
 
-	responses := client.Run(baseclient, requests)
+	responses, metadata := baseclient.Run(requests)
+
+	if len(responses) != len(requests) {
+		klog.Warningf("expected %d responses, got %d", len(requests), len(responses))
+	}
 
 	for _, res := range responses {
 		err := res.Verify()
@@ -48,6 +54,7 @@ func (r *Runner) Run() error {
 	dumper := dump.FileDumper{
 		FilePath:             r.config.OutputFile,
 		DumpFormatterFactory: dump.DumpJSON,
+		StartedAt:            metadata.StartTime,
 	}
 
 	dumper.Dump(responses)

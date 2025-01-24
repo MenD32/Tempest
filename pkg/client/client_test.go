@@ -26,7 +26,7 @@ func TestNewDefaultClient(t *testing.T) {
 		return test.TestResponse{}, nil
 	}
 
-	c := client.NewDefaultClient(respFactory, LOG_LEVEL)
+	c := client.NewDefaultClient(respFactory, LOG_LEVEL, true)
 	if c == nil {
 		t.Fatalf("Expected non-nil client")
 	}
@@ -43,7 +43,7 @@ func TestRunWithServer(t *testing.T) {
 		return test.TestResponse{}, nil
 	}
 
-	c := client.NewDefaultClient(respFactory, LOG_LEVEL)
+	c := client.NewDefaultClient(respFactory, LOG_LEVEL, true)
 
 	requests := []request.Request{}
 	for i := 0; i < REQUEST_COUNT; i++ {
@@ -51,7 +51,7 @@ func TestRunWithServer(t *testing.T) {
 		requests = append(requests, req)
 	}
 
-	responses := client.Run(c, requests)
+	responses, _ := c.Run(requests)
 
 	if len(responses) != len(requests) {
 		t.Fatalf("Expected %d responses, got %d", len(requests), len(responses))
@@ -60,7 +60,7 @@ func TestRunWithServer(t *testing.T) {
 
 func TestRunWithServerAndHighConcurrentRequests(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		time.Sleep(1 * time.Second)
+		time.Sleep(time.Second)
 		fmt.Fprintf(w, "Hello, world")
 	}))
 	defer ts.Close()
@@ -69,7 +69,7 @@ func TestRunWithServerAndHighConcurrentRequests(t *testing.T) {
 		return test.TestResponse{Sent: sent}, nil
 	}
 
-	c := client.NewDefaultClient(respFactory, LOG_LEVEL)
+	c := client.NewDefaultClient(respFactory, LOG_LEVEL, true)
 
 	requests := []request.Request{}
 	for i := 0; i < MAX_CONCURRENT_REQUESTS; i++ {
@@ -77,8 +77,8 @@ func TestRunWithServerAndHighConcurrentRequests(t *testing.T) {
 		requests = append(requests, req)
 	}
 
-	start := time.Now().Add(1 * time.Second)
-	responses := client.Run(c, requests)
+	start := time.Now().Add(client.PRERUN_DELAY)
+	responses, _ := c.Run(requests)
 
 	if len(responses) != len(requests) {
 		t.Fatalf("Expected %d responses, got %d", len(requests), len(responses))
@@ -110,7 +110,7 @@ func TestClientSend(t *testing.T) {
 		return test.TestResponse{Sent: sent}, nil
 	}
 
-	c := client.NewDefaultClient(respFactory, LOG_LEVEL)
+	c := client.NewDefaultClient(respFactory, LOG_LEVEL, true)
 
 	req := test.NewTestRequest(ts.URL, 0)
 	resChan := make(chan response.Response, 1)
@@ -141,7 +141,7 @@ func TestClientSendError(t *testing.T) {
 		return test.TestResponse{}, nil
 	}
 
-	c := client.NewDefaultClient(respFactory, LOG_LEVEL)
+	c := client.NewDefaultClient(respFactory, LOG_LEVEL, true)
 
 	req := test.NewTestRequest("http://invalid-url", 0)
 	resChan := make(chan response.Response, 1)

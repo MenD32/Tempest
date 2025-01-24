@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"runtime"
 
 	"github.com/MenD32/Tempest/pkg/runner"
 	"github.com/spf13/cobra"
@@ -54,7 +55,6 @@ func RunCmd(cmd *cobra.Command, args []string) {
 		ResponseType: responseconfig.ResponseBuilderType(responseType),
 		OutputType:   dumpconfig.OutputType(outputFormat),
 		LogLevel:     loglevel,
-
 	}
 
 	CompletedConfig, err := Config.Complete()
@@ -88,6 +88,9 @@ var versionCmd = &cobra.Command{
 }
 
 func main() {
+
+	runtime.LockOSThread()
+
 	if err := rootCmd.Execute(); err != nil {
 		klog.Errorf("%s\n", err)
 		os.Exit(1)

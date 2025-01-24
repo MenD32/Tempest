@@ -5,21 +5,17 @@ import (
 	"sync"
 	"time"
 
+	"github.com/MenD32/Tempest/pkg/dump"
 	"github.com/MenD32/Tempest/pkg/request"
 	"github.com/MenD32/Tempest/pkg/response"
 	"k8s.io/klog/v2"
 )
 
 const (
-	COMPUTE_OFFSET = 6 * time.Millisecond
+	PRERUN_DELAY = 2 * time.Second // 1 second is too short but 3 seconds is too much
 )
 
-type Client interface {
-	Send(request.Request, chan<- response.Response, *sync.WaitGroup)
-	LogLevel() klog.Level
-}
-
-func Run(c Client, requests []request.Request) []response.Response {
+func (c client) Run(requests []request.Request) ([]response.Response, dump.Metadata) {
 	var traceWaitGroup sync.WaitGroup
 	var requestWaitGroup sync.WaitGroup
 	var requestChan = make(chan request.Request, len(requests))
@@ -28,13 +24,12 @@ func Run(c Client, requests []request.Request) []response.Response {
 	requestTimings := make(map[request.Request]time.Time, len(requests))
 
 	klog.Infof("Indexing %d requests", len(requests))
-	expectedStartTime := time.Now().Add(1 * time.Second)
+	expectedStartTime := time.Now().Add(PRERUN_DELAY)
 	for _, req := range requests {
-		requestTimings[req] = expectedStartTime.Add(req.Delay()).Add(COMPUTE_OFFSET)
+		// The more threads that run concurrently, the lower the accuracy of the sleep until goroutine.
+		// To mend this, we substract a small amount of time from the expected start time. relative to the number for threads (approximately index)
+		requestTimings[req] = expectedStartTime.Add(req.Delay())
 	}
-
-	time.Sleep(time.Until(expectedStartTime))
-	klog.Infof("Starting benchmark")
 
 	for req, calltime := range requestTimings {
 		traceWaitGroup.Add(1)
@@ -44,6 +39,8 @@ func Run(c Client, requests []request.Request) []response.Response {
 			requestChan <- req
 		}()
 	}
+
+	klog.Infof("Starting requests at %v", expectedStartTime)
 
 	go func() {
 		for req := range requestChan {
@@ -66,23 +63,28 @@ func Run(c Client, requests []request.Request) []response.Response {
 	for res := range responseChan {
 		responses = append(responses, res)
 	}
-	return responses
+	return responses, dump.Metadata{Count: len(responses), StartTime: expectedStartTime}
 }
 
 type client struct {
 	respFactory func(*http.Response, time.Time) (response.Response, error)
 	loglevel    int
+	failOnError bool
 }
 
 func (client *client) Send(req request.Request, resChan chan<- response.Response, wg *sync.WaitGroup) {
+
 	defer wg.Done()
 
 	sent := time.Now()
-	httpresp, _ := http.DefaultClient.Do(req.HTTPRequest())
-	// if err != nil {
-	// 	klog.Errorf("Error sending request: %v\n", err)
-	// 	return
-	// }
+
+	httpresp, err := http.DefaultClient.Do(req.HTTPRequest())
+	if err != nil {
+		klog.Errorf("Error sending request: %v\n", err)
+		if client.failOnError {
+			return
+		}
+	}
 
 	resp, err := client.respFactory(httpresp, sent)
 	if err != nil {
@@ -97,6 +99,6 @@ func (client *client) LogLevel() klog.Level {
 	return klog.Level(client.loglevel)
 }
 
-func NewDefaultClient(respFactory func(*http.Response, time.Time) (response.Response, error), loglevel int) Client {
-	return &client{respFactory: respFactory, loglevel: loglevel}
+func NewDefaultClient(respFactory func(*http.Response, time.Time) (response.Response, error), loglevel int, failOnError bool) *client {
+	return &client{respFactory: respFactory, loglevel: loglevel, failOnError: failOnError}
 }

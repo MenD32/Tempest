@@ -101,11 +101,11 @@ func NewToken(chunk []byte) (*Token, error) {
 }
 
 func OpenAIResponseBuilder(resp *http.Response, sent time.Time) (response.Response, error) {
-	klog.Info("Creating OpenAI response")
 	var tokens = []Token{}
 	var tokenTimestamp time.Time
 
 	scanner := bufio.NewScanner(resp.Body)
+	defer resp.Body.Close()
 	for scanner.Scan() {
 		raw := scanner.Text()
 		klog.V(9).Infof("got raw: '%s'\n", raw)
