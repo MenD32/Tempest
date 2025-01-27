@@ -10,14 +10,14 @@ type TestResponse struct {
 	Sent time.Time
 }
 
-func (tr TestResponse) Metrics() (*response.Metrics, error) {
+func (tr TestResponse) Metrics() (*response.Metrics) {
 	return &response.Metrics{
 		Sent: time.Now(),
 		Body: []byte(""),
 		Metrics: map[string]interface{}{
 			"test": "test",
 		},
-	}, nil
+	}
 }
 
 func (tr TestResponse) Verify() error {

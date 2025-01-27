@@ -98,6 +98,12 @@ func TestOpenAIResponse_Verify(t *testing.T) {
 			name: "valid tokens",
 			tokens: []openai.Token{
 				{
+					ID: "token0",
+					Choices: []openai.Choice{
+						{Delta: openai.Delta{Content: "", Role: "assistant"}},
+					},
+				},
+				{
 					ID: "token1",
 					Choices: []openai.Choice{
 						{Delta: openai.Delta{Content: "Hello"}},
@@ -130,6 +136,12 @@ func TestOpenAIResponse_Verify(t *testing.T) {
 			name: "invalid token",
 			tokens: []openai.Token{
 				{
+					ID: "token0",
+					Choices: []openai.Choice{
+						{Delta: openai.Delta{Content: "", Role: "assistant"}},
+					},
+				},
+				{
 					ID: "token1",
 					Choices: []openai.Choice{
 						{Delta: openai.Delta{Content: "Hello"}},
@@ -137,6 +149,14 @@ func TestOpenAIResponse_Verify(t *testing.T) {
 				},
 				{
 					ID: "token2",
+				},
+				{
+					ID: "token3",
+					Usage: openai.Usage{
+						CompletionTokens: 1,
+						PromptTokens:     1,
+						TotalTokens:      2,
+					},
 				},
 			},
 			wantErr: openai.ErrInvalidToken,
@@ -151,7 +171,6 @@ func TestOpenAIResponse_Verify(t *testing.T) {
 			err := resp.Verify()
 			if err != tt.wantErr {
 				t.Errorf("Verify() error = %v, wantErr %v", err, tt.wantErr)
-
 			}
 		})
 	}

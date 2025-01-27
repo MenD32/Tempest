@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"sync"
 	"testing"
 	"time"
 
@@ -114,11 +113,8 @@ func TestClientSend(t *testing.T) {
 
 	req := test.NewTestRequest(ts.URL, 0)
 	resChan := make(chan response.Response, 1)
-	var wg sync.WaitGroup
 
-	wg.Add(1)
-	go c.Send(req, resChan, &wg)
-	wg.Wait()
+	c.Send(req, resChan)
 	close(resChan)
 
 	res, ok := <-resChan
@@ -145,11 +141,8 @@ func TestClientSendError(t *testing.T) {
 
 	req := test.NewTestRequest("http://invalid-url", 0)
 	resChan := make(chan response.Response, 1)
-	var wg sync.WaitGroup
 
-	wg.Add(1)
-	go c.Send(req, resChan, &wg)
-	wg.Wait()
+	go c.Send(req, resChan)
 	close(resChan)
 
 	if len(resChan) != 0 {

@@ -17,8 +17,6 @@ const (
 
 func (c client) Run(requests []request.Request) ([]response.Response, dump.Metadata) {
 	var traceWaitGroup sync.WaitGroup
-	var requestWaitGroup sync.WaitGroup
-	var requestChan = make(chan request.Request, len(requests))
 	var responseChan = make(chan response.Response, len(requests))
 
 	requestTimings := make(map[request.Request]time.Time, len(requests))
@@ -28,6 +26,7 @@ func (c client) Run(requests []request.Request) ([]response.Response, dump.Metad
 	for _, req := range requests {
 		// The more threads that run concurrently, the lower the accuracy of the sleep until goroutine.
 		// To mend this, we substract a small amount of time from the expected start time. relative to the number for threads (approximately index)
+		klog.Infof("Request will be sent at %v", expectedStartTime.Add(req.Delay()))
 		requestTimings[req] = expectedStartTime.Add(req.Delay())
 	}
 
@@ -36,28 +35,17 @@ func (c client) Run(requests []request.Request) ([]response.Response, dump.Metad
 		go func() {
 			defer traceWaitGroup.Done()
 			time.Sleep(time.Until(calltime))
-			requestChan <- req
+			c.Send(req, responseChan)
 		}()
 	}
 
+	time.Sleep(time.Until(expectedStartTime))
 	klog.Infof("Starting requests at %v", expectedStartTime)
 
-	go func() {
-		for req := range requestChan {
-			requestWaitGroup.Add(1)
-			go c.Send(req, responseChan, &requestWaitGroup)
-		}
-	}()
-
 	traceWaitGroup.Wait()
-	close(requestChan)
-
-	klog.Info("Finished sending requests, Waiting for responses...")
-
-	requestWaitGroup.Wait()
 	close(responseChan)
 
-	klog.V(c.LogLevel()).Info("All responses received.")
+	klog.Info("All responses received.")
 
 	var responses []response.Response
 	for res := range responseChan {
@@ -72,23 +60,29 @@ type client struct {
 	failOnError bool
 }
 
-func (client *client) Send(req request.Request, resChan chan<- response.Response, wg *sync.WaitGroup) {
-
-	defer wg.Done()
+func (client *client) Send(req request.Request, resChan chan<- response.Response) {
 
 	sent := time.Now()
+
+	klog.Infof("Sending request... %s", req.HTTPRequest().URL)
 
 	httpresp, err := http.DefaultClient.Do(req.HTTPRequest())
 	if err != nil {
 		klog.Errorf("Error sending request: %v\n", err)
-		if client.failOnError {
-			return
+		resChan <- response.ErrorResponse{
+			Sent: sent,
+			Err:  err,
 		}
+		return
 	}
 
 	resp, err := client.respFactory(httpresp, sent)
 	if err != nil {
 		klog.Errorf("Error creating response: %v\n", err)
+		resChan <- response.ErrorResponse{
+			Sent: sent,
+			Err:  err,
+		}
 		return
 	}
 

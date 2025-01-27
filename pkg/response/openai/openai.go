@@ -14,7 +14,7 @@ const (
 	END_TOKEN    = "data: [DONE]"
 	TOKEN_PREFIX = "data: "
 
-	MIN_TOKEN_COUNT = 2 // 1 for at least 1 token, 1 for usage
+	MIN_TOKEN_COUNT = 3 // 1 for at least 1 token, 1 for usage, 1 for EOF
 )
 
 type OpenAIResponse struct {
@@ -51,11 +51,21 @@ type Delta struct {
 	Role    string `json:"role"`
 }
 
-func (m OpenAIResponse) Metrics() (*response.Metrics, error) {
+func (m OpenAIResponse) Metrics() *response.Metrics {
+
+	if err := m.Verify(); err != nil {
+		return &response.Metrics{
+			Sent:  m.Sent,
+			Error: err,
+		}
+	}
 
 	body, err := m.Body()
 	if err != nil {
-		return nil, err
+		return &response.Metrics{
+			Sent:  m.Sent,
+			Error: err,
+		}
 	}
 
 	usage := m.GetUsage()
@@ -80,7 +90,7 @@ func (m OpenAIResponse) Metrics() (*response.Metrics, error) {
 		Sent:    m.Sent,
 		Body:    body,
 		Metrics: metrics,
-	}, nil
+	}
 }
 
 func (m OpenAIResponse) GetUsage() Usage {
@@ -108,7 +118,6 @@ func OpenAIResponseBuilder(resp *http.Response, sent time.Time) (response.Respon
 	defer resp.Body.Close()
 	for scanner.Scan() {
 		raw := scanner.Text()
-		klog.V(9).Infof("got raw: '%s'\n", raw)
 		tokenTimestamp = time.Now()
 		if len(raw) == 0 || raw == END_TOKEN {
 			continue

@@ -15,10 +15,10 @@ func EmptyResponseBuilder(resp *http.Response, sent time.Time) (response.Respons
 	return EmptyResponse{Sent: sent}, nil
 }
 
-func (r EmptyResponse) Metrics() (*response.Metrics, error) {
+func (r EmptyResponse) Metrics() (*response.Metrics) {
 	return &response.Metrics{
 		Sent: r.Sent,
-	}, nil
+	}
 }
 
 func (r EmptyResponse) Verify() error {

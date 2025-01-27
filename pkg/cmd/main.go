@@ -3,7 +3,8 @@ package main
 import (
 	"fmt"
 	"os"
-	"runtime"
+	"runtime/pprof"
+	"runtime/trace"
 
 	"github.com/MenD32/Tempest/pkg/runner"
 	"github.com/spf13/cobra"
@@ -89,7 +90,17 @@ var versionCmd = &cobra.Command{
 
 func main() {
 
-	runtime.LockOSThread()
+	f, _ := os.Create("temp/cpu.prof")
+	defer f.Close()
+
+	t, _ := os.Create("temp/trace.out")
+	defer t.Close()
+
+	pprof.StartCPUProfile(f)
+	defer pprof.StopCPUProfile()
+
+	trace.Start(t)
+	defer trace.Stop()
 
 	if err := rootCmd.Execute(); err != nil {
 		klog.Errorf("%s\n", err)

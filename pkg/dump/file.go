@@ -30,10 +30,7 @@ func (fd FileDumper) Dump(responses []response.Response) error {
 		if res == nil {
 			return fmt.Errorf("response is nil")
 		}
-		metric, err := res.Metrics()
-		if err != nil {
-			return fmt.Errorf("failed to get metrics: %w", err)
-		}
+		metric := res.Metrics()
 		metrics = append(metrics, *metric)
 	}
 
