@@ -16,12 +16,19 @@ import (
 )
 
 var (
+	// runner config
 	inputFile    string
 	outputFile   string
 	host         string
 	requestType  string
 	responseType string
 	outputFormat string
+
+	// debug config
+	enablePprof bool
+	pprofFile   string
+	enableTrace bool
+	traceFile   string
 )
 
 var (
@@ -122,6 +129,11 @@ func init() {
 	runCmd.Flags().StringVar(&requestType, "request-type", "Shakespeare", "Request type (shakespeare)")
 	runCmd.Flags().StringVar(&responseType, "response-type", "openai", "Response format")
 	runCmd.Flags().StringVar(&outputFormat, "output-format", "JSON", "Output format (json or csv)")
+
+	runCmd.Flags().BoolVar(&enablePprof, "enable-pprof", false, "Enable pprof profiling")
+	runCmd.Flags().StringVar(&pprofFile, "pprof-file", "cpu.prof", "File to write pprof output to")
+	runCmd.Flags().BoolVar(&enableTrace, "enable-trace", false, "Enable pprof profiling")
+	runCmd.Flags().StringVar(&traceFile, "trace-file", "trace.out", "File to write trace output to")
 
 	rootCmd.AddCommand(runCmd)
 	rootCmd.AddCommand(versionCmd)

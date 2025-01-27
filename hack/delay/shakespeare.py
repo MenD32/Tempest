@@ -14,9 +14,9 @@ def main():
     parser.add_argument('--output', type=str, required=True, help='Path to the output JSON Output file file')
     args = parser.parse_args()
 
-    with open(args.input, 'r') as f:
-        rawdata = json.load(f)
     with open(args.output, 'r') as f:
+        rawdata = json.load(f)
+    with open(args.input, 'r') as f:
         trace = json.load(f)
 
     parsed_data = [
