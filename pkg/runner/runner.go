@@ -34,8 +34,7 @@ func (r *Runner) Run() error {
 
 	baseclient := client.NewDefaultClient(
 		r.config.ResponseBuilder,
-		r.config.LogLevel,
-		true,
+		client.NewRecommendedClientConfig(),
 	)
 
 	responses, metadata := baseclient.Run(requests)

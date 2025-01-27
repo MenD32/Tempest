@@ -56,8 +56,7 @@ func (c client) Run(requests []request.Request) ([]response.Response, dump.Metad
 
 type client struct {
 	respFactory func(*http.Response, time.Time) (response.Response, error)
-	loglevel    int
-	failOnError bool
+	config      ClientConfig
 }
 
 func (client *client) Send(req request.Request, resChan chan<- response.Response) {
@@ -89,10 +88,6 @@ func (client *client) Send(req request.Request, resChan chan<- response.Response
 	resChan <- resp
 }
 
-func (client *client) LogLevel() klog.Level {
-	return klog.Level(client.loglevel)
-}
-
-func NewDefaultClient(respFactory func(*http.Response, time.Time) (response.Response, error), loglevel int, failOnError bool) *client {
-	return &client{respFactory: respFactory, loglevel: loglevel, failOnError: failOnError}
+func NewDefaultClient(respFactory func(*http.Response, time.Time) (response.Response, error), config ClientConfig) *client {
+	return &client{respFactory: respFactory, config: config}
 }

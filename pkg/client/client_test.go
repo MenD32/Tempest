@@ -17,7 +17,6 @@ const (
 	MAX_DRIFT               = 50 * time.Millisecond
 	MAX_CONCURRENT_REQUESTS = 1000
 	REQUEST_COUNT           = 100
-	LOG_LEVEL               = 9
 )
 
 func TestNewDefaultClient(t *testing.T) {
@@ -25,7 +24,10 @@ func TestNewDefaultClient(t *testing.T) {
 		return test.TestResponse{}, nil
 	}
 
-	c := client.NewDefaultClient(respFactory, LOG_LEVEL, true)
+	c := client.NewDefaultClient(
+		respFactory,
+		client.NewRecommendedClientConfig(),
+	)
 	if c == nil {
 		t.Fatalf("Expected non-nil client")
 	}
@@ -42,7 +44,10 @@ func TestRunWithServer(t *testing.T) {
 		return test.TestResponse{}, nil
 	}
 
-	c := client.NewDefaultClient(respFactory, LOG_LEVEL, true)
+	c := client.NewDefaultClient(
+		respFactory,
+		client.NewRecommendedClientConfig(),
+	)
 
 	requests := []request.Request{}
 	for i := 0; i < REQUEST_COUNT; i++ {
@@ -68,7 +73,10 @@ func TestRunWithServerAndHighConcurrentRequests(t *testing.T) {
 		return test.TestResponse{Sent: sent}, nil
 	}
 
-	c := client.NewDefaultClient(respFactory, LOG_LEVEL, true)
+	c := client.NewDefaultClient(
+		respFactory,
+		client.NewRecommendedClientConfig(),
+	)
 
 	requests := []request.Request{}
 	for i := 0; i < MAX_CONCURRENT_REQUESTS; i++ {
@@ -109,7 +117,10 @@ func TestClientSend(t *testing.T) {
 		return test.TestResponse{Sent: sent}, nil
 	}
 
-	c := client.NewDefaultClient(respFactory, LOG_LEVEL, true)
+	c := client.NewDefaultClient(
+		respFactory,
+		client.NewRecommendedClientConfig(),
+	)
 
 	req := test.NewTestRequest(ts.URL, 0)
 	resChan := make(chan response.Response, 1)
@@ -137,7 +148,7 @@ func TestClientSendError(t *testing.T) {
 		return test.TestResponse{}, nil
 	}
 
-	c := client.NewDefaultClient(respFactory, LOG_LEVEL, true)
+	c := client.NewDefaultClient(respFactory, client.ClientConfig{})
 
 	req := test.NewTestRequest("http://invalid-url", 0)
 	resChan := make(chan response.Response, 1)
