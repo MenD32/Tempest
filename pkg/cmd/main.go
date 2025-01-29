@@ -35,8 +35,6 @@ var (
 	Version        = "dev"
 	CommitHash     = "none"
 	BuildTimestamp = "unknown"
-
-	loglevel int = 1
 )
 
 func BuildVersion() string {
@@ -120,8 +118,6 @@ func init() {
 
 	runCmd.Flags().StringVarP(&outputFile, "output", "o", "", "Output file for benchmark results")
 	runCmd.MarkFlagRequired("output")
-
-	runCmd.Flags().IntVarP(&loglevel, "loglevel", "v", 1, "Log level")
 
 	runCmd.Flags().StringVar(&host, "host", "", "Host to send requests to")
 	runCmd.MarkFlagRequired("host")
